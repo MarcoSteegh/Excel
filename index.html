@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Analyzer - Web Interface</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" href="data:," />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-chart-line"></i> CSV Analyzer</h1>
+            <p>Analyseer CSV-bestanden eenvoudig in je browser</p>
+        </header>
+
+        <main>
+            <!-- Stap 1: CSV Bestanden uploaden -->
+            <section class="upload-section">
+                <h2><i class="fas fa-upload"></i> Stap 1: CSV-bestand uploaden</h2>
+                
+                <div class="upload-container">
+                    <div class="upload-box">
+                        <h3>CSV-bestand</h3>
+                        <input type="file" id="baseCSV" accept=".csv" class="file-input">
+                        <label for="baseCSV" class="file-label">
+                            <i class="fas fa-file-csv"></i>
+                            <span>Selecteer CSV</span>
+                        </label>
+                        <div id="baseCSVInfo" class="file-info"></div>
+                        
+                        <!-- Smart Update knop -->
+                        <button id="smartUpdateCSV" class="smart-update-btn" style="display: none; margin-top: 10px;">
+                            <i class="fas fa-sync-alt"></i> Update met behoud van tracking data
+                        </button>
+                        <input type="file" id="smartUpdateFile" accept=".csv" style="display: none;">
+                    </div>
+
+
+                </div>
+            </section>
+
+            <!-- Stap 2: Instellingen -->
+            <section class="settings-section" style="display: none;">
+                <h2><i class="fas fa-cog"></i> Stap 2: Instellingen</h2>
+                
+                <div class="settings-container">
+                    <div class="setting-group">
+                        <label for="encoding">Tekstcodering:</label>
+                        <select id="encoding">
+                            <option value="UTF-8">UTF-8</option>
+                            <option value="ISO-8859-1">ISO-8859-1</option>
+                            <option value="Windows-1252">Windows-1252</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label for="separator">Scheidingsteken:</label>
+                        <select id="separator">
+                            <option value="auto">🤖 Automatisch detecteren</option>
+                            <option value=",">Komma (,)</option>
+                            <option value=";">Puntkomma (;)</option>
+                            <option value="\t">Tab</option>
+                            <option value="|">Pipe (|)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Kolomselectie sectie -->
+                <div class="column-selection" style="display: none;">
+                    <h3><i class="fas fa-columns"></i> Selecteer kolommen voor presentatie</h3>
+                    <p class="help-text">Kies welke kolommen je wilt tonen in de resultaten:</p>
+                    
+                    <!-- Zoekfunctie -->
+                    <div class="search-section">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="columnSearch" placeholder="Zoek op kolomnaam..." class="search-input">
+                            <button type="button" id="clearSearch" class="clear-search-btn" title="Wis zoekterm">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Kolom Presets -->
+                    <div class="column-presets">
+                        <h4><i class="fas fa-bookmark"></i> Snelle selecties</h4>
+                        <div class="preset-buttons">
+                            <button type="button" id="presetBasic" class="preset-btn" title="Selecteert: Klantnummer, naam, titel, omschrijving, status, type, categorie kolommen">
+                                <i class="fas fa-list"></i> Basis info
+                            </button>
+                            <button type="button" id="presetCustom" class="preset-btn">
+                                <i class="fas fa-star"></i> Mijn favoriet
+                            </button>
+                        </div>
+                        <div class="preset-actions">
+                            <button type="button" id="savePreset" class="preset-action-btn">
+                                <i class="fas fa-save"></i> Huidige selectie opslaan als favoriet
+                            </button>
+                            <button type="button" id="clearPreset" class="preset-action-btn">
+                                <i class="fas fa-trash"></i> Favoriet wissen
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="column-checkboxes" id="columnCheckboxes">
+                        <!-- Dynamisch gevuld met beschikbare kolommen -->
+                    </div>
+                    
+                    <div class="column-actions">
+                        <button type="button" id="selectAllColumns" class="column-action-btn">
+                            <i class="fas fa-check-square"></i> Selecteer alles
+                        </button>
+                        <button type="button" id="deselectAllColumns" class="column-action-btn">
+                            <i class="fas fa-square"></i> Deselecteer alles
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tracking Kolommen -->
+                <div class="tracking-section" style="display: none;">
+                    <h3><i class="fas fa-tasks"></i> Tracking kolommen</h3>
+                    <p class="help-text">Voeg extra kolommen toe voor het bijhouden van je werkproces:</p>
+                    
+                    <div class="tracking-columns">
+                        <div class="tracking-column">
+                            <input type="checkbox" id="track_inventarisatie" value="Inventarisatie OWR gemaakt" checked>
+                            <label for="track_inventarisatie">Inventarisatie OWR gemaakt</label>
+                        </div>
+                        <div class="tracking-column">
+                            <input type="checkbox" id="track_owr_zinvol" value="OWR zinvol" checked>
+                            <label for="track_owr_zinvol">OWR zinvol</label>
+                        </div>
+                        <div class="tracking-column">
+                            <input type="checkbox" id="track_gegevens" value="Gegevens compleet" checked>
+                            <label for="track_gegevens">Gegevens compleet</label>
+                        </div>
+                        <div class="tracking-column">
+                            <input type="checkbox" id="track_contact" value="Contact met klant opgenomen" checked>
+                            <label for="track_contact">Contact met klant opgenomen</label>
+                        </div>
+                        <div class="tracking-column">
+                            <input type="checkbox" id="track_opgave" value="Opgave OWR ingevuld" checked>
+                            <label for="track_opgave">Opgave OWR ingevuld</label>
+                        </div>
+                        <div class="tracking-column">
+                            <input type="checkbox" id="track_afgewerkt" value="Afgewerkt" checked>
+                            <label for="track_afgewerkt">Afgewerkt</label>
+                        </div>
+                    </div>
+                    
+                    <div class="tracking-actions">
+                        <button type="button" id="addTrackingColumns" class="tracking-action-btn">
+                            <i class="fas fa-plus"></i> Tracking kolommen toevoegen
+                        </button>
+                        <button type="button" id="removeTrackingColumns" class="tracking-action-btn">
+                            <i class="fas fa-minus"></i> Tracking kolommen verwijderen
+                        </button>
+                    </div>
+                </div>
+
+
+            </section>
+
+            <!-- Data basisbestand -->
+            <section class="preview-section" style="display: none;">
+                <h2><i class="fas fa-table"></i> Data</h2>
+                
+                <div class="preview-controls">
+                    <div class="preview-info">
+                        <span id="previewInfo">Geen data geladen</span>
+                        <div id="debugInfo" style="font-size: 0.8rem; color: #666; margin-top: 5px; display: none;"></div>
+                    </div>
+                    <div class="preview-actions">
+                        <button id="exportPreview" class="preview-btn">
+                            <i class="fas fa-download"></i> Exporteer huidige view
+                        </button>
+                        <button id="exportToPDF" class="preview-btn" style="background: #dc3545;">
+                            <i class="fas fa-file-pdf"></i> Exporteer naar PDF
+                        </button>
+                        <button id="saveDataWithTracking" class="preview-btn" style="background: #28a745;">
+                            <i class="fas fa-save"></i> Opslaan met tracking
+                        </button>
+                        <button id="loadDataWithTracking" class="preview-btn" style="background: #17a2b8;">
+                            <i class="fas fa-folder-open"></i> Laden met tracking
+                        </button>
+                        <input type="file" id="loadTrackingFile" accept=".json" style="display: none;">
+                    </div>
+                </div>
+
+                <div class="preview-tabs">
+                    <button class="preview-tab-btn active" data-preview-tab="base">
+                        <i class="fas fa-file-alt"></i> CSV
+                    </button>
+                    <button class="preview-tab-btn" data-preview-tab="new" style="display: none;">
+                        <i class="fas fa-file"></i> Nieuw CSV
+                    </button>
+                </div>
+
+                <!-- Data Search Section - Nette positie tussen tabs en content -->
+                <div class="data-search-section" style="display: none;">
+                    <div class="data-search-header">
+                        <h4><i class="fas fa-search"></i> Zoek klant</h4>
+                        <div class="data-search-stats">
+                            <span id="searchStats">Alle records getoond</span>
+                        </div>
+                    </div>
+                    <div class="data-search-box">
+                        <i class="fas fa-user-search"></i>
+                        <input type="text" id="dataSearch" placeholder="Zoek op naam, klantnummer, plaats..." class="data-search-input">
+                        <button type="button" id="clearDataSearch" class="clear-data-search-btn" title="Wis zoekterm">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preview-content">
+                    <div id="basePreview" class="preview-tab-content active">
+                        <div class="table-container">
+                            <table id="basePreviewTable" class="preview-table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="newPreview" class="preview-tab-content">
+                        <div class="table-container">
+                            <table id="newPreviewTable" class="preview-table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stap 3: Resultaten -->
+            <section class="results-section" style="display: none;">
+                <h2><i class="fas fa-chart-bar"></i> Stap 3: Resultaten</h2>
+                
+                <div class="summary-cards">
+                    <div class="summary-card new">
+                        <div class="card-icon"><i class="fas fa-plus"></i></div>
+                        <div class="card-content">
+                            <h3>Nieuwe Records</h3>
+                            <span id="newCount">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card changed">
+                        <div class="card-icon"><i class="fas fa-edit"></i></div>
+                        <div class="card-content">
+                            <h3>Gewijzigde Records</h3>
+                            <span id="changedCount">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card deleted">
+                        <div class="card-icon"><i class="fas fa-trash"></i></div>
+                        <div class="card-content">
+                            <h3>Verwijderde Records</h3>
+                            <span id="deletedCount">0</span>
+                        </div>
+                    </div>
+                    
+                    <div class="summary-card unchanged">
+                        <div class="card-icon"><i class="fas fa-check"></i></div>
+                        <div class="card-content">
+                            <h3>Ongewijzigd</h3>
+                            <span id="unchangedCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="results-tabs">
+                    <button class="tab-btn active" data-tab="new">Nieuwe Records</button>
+                    <button class="tab-btn" data-tab="changed">Gewijzigde Records</button>
+                    <button class="tab-btn" data-tab="deleted">Verwijderde Records</button>
+                </div>
+
+                <div class="results-content">
+                    <div id="newRecords" class="tab-content active">
+                        <div class="table-container">
+                            <table id="newTable" class="results-table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="changedRecords" class="tab-content">
+                        <div class="table-container">
+                            <table id="changedTable" class="results-table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <div id="deletedRecords" class="tab-content">
+                        <div class="table-container">
+                            <table id="deletedTable" class="results-table">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="export-section">
+                    <button id="exportExcel" class="export-btn">
+                        <i class="fas fa-file-excel"></i> Exporteer naar Excel
+                    </button>
+                    <button id="exportBaseWithTracking" class="export-btn">
+                        <i class="fas fa-table"></i> Exporteer Basis Data + Tracking
+                    </button>
+                    <button id="exportCSV" class="export-btn">
+                        <i class="fas fa-file-csv"></i> Exporteer naar CSV
+                    </button>
+                    <button id="printReport" class="export-btn">
+                        <i class="fas fa-print"></i> Print Rapport
+                    </button>
+                </div>
+            </section>
+
+            <!-- Loading Indicator -->
+            <div id="loadingIndicator" class="loading" style="display: none;">
+                <div class="loader"></div>
+                <p>Analyseren...</p>
+            </div>
+
+            <!-- Error Messages -->
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span></span>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 CSV Analyzer - Gemaakt door Marco Steegh</p>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
