@@ -16,13 +16,85 @@
         </header>
 
         <main>
-            <!-- Stap 1: CSV Bestanden uploaden -->
+            <!-- Stap 0: Jaar-bestanden (Nieuw!) -->
+            <section class="year-files-section">
+                <h2><i class="fas fa-calendar-alt"></i> Stap 1: Jaar-bestanden (Referentie data)</h2>
+                <p class="help-text">Upload eenmalig de jaar-bestanden. De data blijft bewaard in je browser.</p>
+                
+                <div class="year-files-grid">
+                    <div class="year-file-box" data-year="2020">
+                        <h4>2020</h4>
+                        <input type="file" id="year2020" accept=".csv" class="file-input">
+                        <label for="year2020" class="file-label-small">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload</span>
+                        </label>
+                        <div class="year-status status-empty">➖ Niet geladen</div>
+                    </div>
+                    
+                    <div class="year-file-box" data-year="2021">
+                        <h4>2021</h4>
+                        <input type="file" id="year2021" accept=".csv" class="file-input">
+                        <label for="year2021" class="file-label-small">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload</span>
+                        </label>
+                        <div class="year-status status-empty">➖ Niet geladen</div>
+                    </div>
+                    
+                    <div class="year-file-box" data-year="2022">
+                        <h4>2022</h4>
+                        <input type="file" id="year2022" accept=".csv" class="file-input">
+                        <label for="year2022" class="file-label-small">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload</span>
+                        </label>
+                        <div class="year-status status-empty">➖ Niet geladen</div>
+                    </div>
+                    
+                    <div class="year-file-box" data-year="2023">
+                        <h4>2023</h4>
+                        <input type="file" id="year2023" accept=".csv" class="file-input">
+                        <label for="year2023" class="file-label-small">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload</span>
+                        </label>
+                        <div class="year-status status-empty">➖ Niet geladen</div>
+                    </div>
+                    
+                    <div class="year-file-box" data-year="2024">
+                        <h4>2024</h4>
+                        <input type="file" id="year2024" accept=".csv" class="file-input">
+                        <label for="year2024" class="file-label-small">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload</span>
+                        </label>
+                        <div class="year-status status-empty">➖ Niet geladen</div>
+                    </div>
+                    
+                    <div class="year-file-box" data-year="2025">
+                        <h4>2025</h4>
+                        <input type="file" id="year2025" accept=".csv" class="file-input">
+                        <label for="year2025" class="file-label-small">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload</span>
+                        </label>
+                        <div class="year-status status-empty">➖ Niet geladen</div>
+                    </div>
+                </div>
+                
+                <div class="year-data-info" id="yearDataInfo">
+                    <p>Geen jaar-bestanden geladen</p>
+                </div>
+            </section>
+
+            <!-- Stap 1: CSV Bestanden uploaden (Aangiftes) -->
             <section class="upload-section">
-                <h2><i class="fas fa-upload"></i> Stap 1: CSV-bestand uploaden</h2>
+                <h2><i class="fas fa-upload"></i> Stap 2: Aangiftes CSV-bestand uploaden</h2>
                 
                 <div class="upload-container">
                     <div class="upload-box">
-                        <h3>CSV-bestand</h3>
+                        <h3>Aangiftes CSV-bestand</h3>
                         <input type="file" id="baseCSV" accept=".csv" class="file-input">
                         <label for="baseCSV" class="file-label">
                             <i class="fas fa-file-csv"></i>
@@ -43,7 +115,7 @@
 
             <!-- Stap 2: Instellingen -->
             <section class="settings-section" style="display: none;">
-                <h2><i class="fas fa-cog"></i> Stap 2: Instellingen</h2>
+                <h2><i class="fas fa-cog"></i> Stap 3: Instellingen</h2>
                 
                 <div class="settings-container">
                     <div class="setting-group">
@@ -64,57 +136,6 @@
                             <option value="\t">Tab</option>
                             <option value="|">Pipe (|)</option>
                         </select>
-                    </div>
-                </div>
-
-                <!-- Kolomselectie sectie -->
-                <div class="column-selection" style="display: none;">
-                    <h3><i class="fas fa-columns"></i> Selecteer kolommen voor presentatie</h3>
-                    <p class="help-text">Kies welke kolommen je wilt tonen in de resultaten:</p>
-                    
-                    <!-- Zoekfunctie -->
-                    <div class="search-section">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="columnSearch" placeholder="Zoek op kolomnaam..." class="search-input">
-                            <button type="button" id="clearSearch" class="clear-search-btn" title="Wis zoekterm">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Kolom Presets -->
-                    <div class="column-presets">
-                        <h4><i class="fas fa-bookmark"></i> Snelle selecties</h4>
-                        <div class="preset-buttons">
-                            <button type="button" id="presetBasic" class="preset-btn" title="Selecteert: Klantnummer, naam, titel, omschrijving, status, type, categorie kolommen">
-                                <i class="fas fa-list"></i> Basis info
-                            </button>
-                            <button type="button" id="presetCustom" class="preset-btn">
-                                <i class="fas fa-star"></i> Mijn favoriet
-                            </button>
-                        </div>
-                        <div class="preset-actions">
-                            <button type="button" id="savePreset" class="preset-action-btn">
-                                <i class="fas fa-save"></i> Huidige selectie opslaan als favoriet
-                            </button>
-                            <button type="button" id="clearPreset" class="preset-action-btn">
-                                <i class="fas fa-trash"></i> Favoriet wissen
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div class="column-checkboxes" id="columnCheckboxes">
-                        <!-- Dynamisch gevuld met beschikbare kolommen -->
-                    </div>
-                    
-                    <div class="column-actions">
-                        <button type="button" id="selectAllColumns" class="column-action-btn">
-                            <i class="fas fa-check-square"></i> Selecteer alles
-                        </button>
-                        <button type="button" id="deselectAllColumns" class="column-action-btn">
-                            <i class="fas fa-square"></i> Deselecteer alles
-                        </button>
                     </div>
                 </div>
 
@@ -161,6 +182,34 @@
                 </div>
 
 
+            </section>
+
+            <!-- Year Selector -->
+            <section class="year-selector-section" style="display: none;">
+                <h2><i class="fas fa-calendar-alt"></i> Jaar selectie</h2>
+                
+                <div class="year-selector-controls">
+                    <div class="year-select-container">
+                        <label for="yearSelect">Selecteer jaar:</label>
+                        <select id="yearSelect">
+                            <option value="all">Alle jaren</option>
+                            <option value="2024">2024</option>
+                            <option value="2023">2023</option>
+                            <option value="2022">2022</option>
+                            <option value="2021">2021</option>
+                            <option value="2020">2020</option>
+                        </select>
+                    </div>
+                    
+                    <div class="year-filter-container">
+                        <input type="checkbox" id="filterActionNeeded">
+                        <label for="filterActionNeeded">Alleen rijen waar actie nodig is</label>
+                    </div>
+                    
+                    <div class="year-stats-display" id="yearStatsDisplay">
+                        <!-- Statistics will be dynamically inserted here -->
+                    </div>
+                </div>
             </section>
 
             <!-- Data basisbestand -->
@@ -343,11 +392,20 @@
         </footer>
     </div>
 
-    <!-- Scripts -->
+    <!-- External Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.6.0/jspdf.plugin.autotable.min.js"></script>
-    <script src="script.js"></script>
+    
+    <!-- Application Modules -->
+    <script src="js/csv-parser.js"></script>
+    <script src="js/storage-manager.js"></script>
+    <script src="js/year-manager.js"></script>
+    <script src="js/year-ui.js"></script>
+    <script src="js/main.js"></script>
+    
+    <!-- Application Initialization -->
+    <script src="js/init.js"></script>
 </body>
 </html>

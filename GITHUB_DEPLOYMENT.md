@@ -77,7 +77,7 @@ git push -u origin main
 
 Als je iets wilt aanpassen:
 
-### Via GitHub website:
+### Via GitHub website
 
 1. Ga naar je repository
 2. Klik op het bestand dat je wilt wijzigen
@@ -86,7 +86,7 @@ Als je iets wilt aanpassen:
 5. Scroll naar beneden en klik "Commit changes"
 6. Wacht 1-2 minuten → je site is bijgewerkt!
 
-### Via Git:
+### Via Git
 
 ```powershell
 # Maak wijzigingen in je lokale bestanden
