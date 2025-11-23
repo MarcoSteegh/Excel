@@ -113,7 +113,7 @@ De browser opent automatisch naar: `http://localhost:8000`
 
 ### Project Structuur
 
-```
+```html
 📁 CSV Analyzer/
 ├── 📄 index.html              # Hoofdpagina
 ├── 🎨 styles.css              # Styling

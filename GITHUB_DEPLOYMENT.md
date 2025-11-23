@@ -162,7 +162,7 @@ git push
 
 Je kunt je app nu delen door simpelweg de URL te sturen:
 
-```
+```html
 https://jouw-username.github.io/csv-analyzer
 ```
 

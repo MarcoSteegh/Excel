@@ -1572,7 +1572,7 @@ class CSVAnalyzer {
         };
 
         // Speciale styling voor tracking kolommen
-        const trackingColumns = ['Inventarisatie OWR gemaakt', 'Gegevens compleet', 'Contact met klant opgenomen', 'Opgave OWR ingevuld', 'Afgewerkt'];
+        const trackingColumns = ['Inventarisatie OWR gemaakt', 'OWR zinvol', 'Gegevens compleet', 'Contact met klant opgenomen', 'Opgave OWR ingevuld', 'Afgewerkt'];
         selectedColumns.forEach((col, index) => {
             if (trackingColumns.includes(col)) {
                 tableConfig.columnStyles[index] = {
