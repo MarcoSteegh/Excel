@@ -68,13 +68,16 @@ class YearUI {
 
             const parser = new CSVParser();
             
-            await this.yearManager.uploadYearFile(file, year, parser, (headers, callback) => {
-                this.showColumnSelector(year, headers, callback);
+            await this.yearManager.uploadYearFile(file, year, parser, (headers, saveColumns) => {
+                this.showColumnSelector(year, headers, async (selectedColumns) => {
+                    await saveColumns(selectedColumns);
+                    // Forceer update van UI direct na opslaan
+                    console.log('[YearUI] updateYearOverview na upload', year);
+                    this.updateYearOverview();
+                    console.log('[YearUI] updateYearSelector na upload', year);
+                    this.updateYearSelector();
+                });
             });
-
-            // Update UI
-            this.updateYearOverview();
-            this.updateYearSelector();
             
         } catch (error) {
             this.showYearStatus(year, 'error', error.message);
@@ -124,22 +127,39 @@ class YearUI {
 
         // Handle actions
         modal.querySelector('.btn-cancel').addEventListener('click', () => {
+            console.log('[Modal] Annuleren geklikt, modal wordt gesloten');
             modal.remove();
         });
 
-        modal.querySelector('.btn-confirm').addEventListener('click', () => {
+        modal.querySelector('.btn-confirm').addEventListener('click', async () => {
+            console.log('[Modal] Opslaan geklikt');
             const selected = Array.from(modal.querySelectorAll('input[type="checkbox"]:checked'))
                 .map(cb => cb.value);
-            
+            console.log('[Modal] Geselecteerde kolommen:', selected);
             if (selected.length === 0) {
                 alert('Selecteer minimaal één kolom');
                 return;
             }
-
-            callback(selected);
-            modal.remove();
-            
-            this.showYearStatus(year, 'success', '✅ Geladen');
+            try {
+                console.log('[Modal] Opslaan start');
+                await callback(selected);
+                console.log('[Modal] Opslaan klaar, modal wordt gesloten');
+                // Forceer verwijderen van alle modals
+                document.querySelectorAll('.modal-overlay').forEach((el, i) => {
+                    console.log(`[Modal] Verwijder modal-overlay #${i}`);
+                    el.remove();
+                });
+                this.showYearStatus(year, 'success', 'Geladen');
+            } catch (err) {
+                console.error('[Modal] Fout bij opslaan:', err);
+                let errorBox = modal.querySelector('.modal-error');
+                if (!errorBox) {
+                    errorBox = document.createElement('div');
+                    errorBox.className = 'modal-error';
+                    modal.querySelector('.modal-content').appendChild(errorBox);
+                }
+                errorBox.textContent = 'Fout bij opslaan: ' + (err.message || err);
+            }
         });
     }
 
@@ -159,6 +179,7 @@ class YearUI {
 
         const yearInfo = years.map(year => {
             const info = this.yearManager.getYearFileInfo(year);
+            // Alleen jaar en recordcount, geen vinkje
             return `<strong>${year}</strong> (${info.recordCount} records)`;
         }).join(', ');
 
@@ -257,7 +278,7 @@ class YearUI {
         statsDiv.innerHTML = `
             📈 <strong>${stats.year}:</strong> 
             ${stats.total} klanten totaal | 
-            ✅ ${stats.compleet} compleet (${stats.percentageCompleet}%) | 
+            ${stats.compleet} compleet (${stats.percentageCompleet}%) | 
             ⚠️ ${stats.actionRequired} actie nodig (${100 - stats.percentageCompleet}%)
         `;
     }

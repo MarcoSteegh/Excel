@@ -86,15 +86,62 @@ class CSVAnalyzer {
 
         try {
             const text = await this.readFileAsText(file);
-            const data = this.parseCSV(text);
-            
-            this.baseData = data;
-            this.originalBaseFile = file; // Sla origineel bestand op voor re-parsing
-            this.displayFileInfo('baseCSVInfo', file, data);
-            
+            const aangiftesData = this.parseCSV(text);
+            // Combineer ALTIJD alle jaarbestanden als basis
+            const allYears = window.yearManager.getAvailableYears();
+            let allRows = [];
+            allYears.forEach(y => {
+                const yd = window.yearManager.getYearData(y);
+                if (yd && yd.data) {
+                    yd.data.forEach(row => {
+                        const newRow = JSON.parse(JSON.stringify(row));
+                        allRows.push(newRow);
+                    });
+                }
+            });
+            // Maak een map van aangiftes op klantnummer+jaar
+            function getKlantnummer(row) {
+                if (row['Klantnummer'] && row['Klantnummer'].trim()) return row['Klantnummer'].trim();
+                if (row['Cliëntnummer'] && row['Cliëntnummer'].trim()) return row['Cliëntnummer'].trim();
+                return '';
+            }
+            const aangifteMap = new Map();
+            aangiftesData.data.forEach(row => {
+                const key = `${getKlantnummer(row)}_${row['Jaar']}`;
+                aangifteMap.set(key, row);
+            });
+            // Combineer data: alle klanten uit jaar-bestanden, aangevuld met aangifte/tracking-data
+            const mergedData = allRows.map(yearRow => {
+                let klantnummer = yearRow['Klantnummer'] && yearRow['Klantnummer'].trim()
+                    ? yearRow['Klantnummer'].trim()
+                    : (yearRow['Cliëntnummer'] && yearRow['Cliëntnummer'].trim() ? yearRow['Cliëntnummer'].trim() : '');
+                let mergedRow = { ...yearRow };
+                if (!mergedRow['Klantnummer'] && mergedRow['Cliëntnummer']) {
+                    mergedRow['Klantnummer'] = mergedRow['Cliëntnummer'];
+                }
+                // Normaliseer Jaar altijd als string
+                if (mergedRow['Jaar'] !== undefined && mergedRow['Jaar'] !== null) {
+                    mergedRow['Jaar'] = String(mergedRow['Jaar']).trim();
+                }
+                const key = `${klantnummer}_${mergedRow['Jaar']}`;
+                const aangifteRow = aangifteMap.get(key);
+                if (!klantnummer) {
+                    console.warn(`[Merge] Geen klantnummer gevonden in jaar ${mergedRow['Jaar']}:`, yearRow);
+                }
+                return aangifteRow
+                    ? { ...mergedRow, ...aangifteRow, _hasAangifte: true }
+                    : { ...mergedRow, _hasAangifte: false };
+            });
+            const uniqueJaren = [...new Set(mergedData.map(r => r['Jaar']))];
+            console.log(`[Merge] Gecombineerde data:`, mergedData.map(r => r['Jaar']));
+            console.log(`[Merge] Unieke jaren in merged data:`, uniqueJaren);
+            this.baseData = { headers: Object.keys(mergedData[0] || {}), data: mergedData };
             this.updateKeyColumnOptions();
+            if (this.baseData && this.baseData.data) {
+                console.log(`[Preview] Rendering ${this.baseData.data.length} rows in data overview.`);
+            }
             this.updatePreview();
-            
+
         } catch (error) {
             this.showError(`Fout bij het lezen van ${file.name}: ${error.message}`);
         }
@@ -273,14 +320,15 @@ class CSVAnalyzer {
 
     getSelectedColumns() {
         // Vaste set kolommen die altijd getoond worden
+        // Toon altijd 'Klantnummer' als eerste kolom, daarna relevante kolommen
         const defaultColumns = [
-            'Nummer',           // Klantnummer (altijd eerste)
-            'Initialen',
-            'Tussenvoegsel',
+            'Klantnummer',      // Altijd eerste
             'Achternaam',
             'Jaar',
             'Behandelaar',
-            'Verantwoordelijke'
+            'Verantwoordelijke',
+            'Belastingconsulent',
+            'Box 3 belasting'
         ];
         
         // Filter alleen kolommen die echt bestaan in de data
@@ -1414,8 +1462,18 @@ class CSVAnalyzer {
         });
         thead.appendChild(headerRow);
         
-        // Sorteer data op Nummer kolom (klantnummer) van laag naar hoog
-        let sortedData = data.headers.includes('Nummer') ? this.sortDataByNumber(data.data) : data.data;
+        // Sorteer eerst op Klantnummer, daarna op Jaar (oud naar nieuw)
+        let sortedData = [...data.data].sort((a, b) => {
+            const numA = parseInt(a['Klantnummer']) || 0;
+            const numB = parseInt(b['Klantnummer']) || 0;
+            if (numA !== numB) {
+                return numA - numB;
+            }
+            // Jaar als string, maar sorteer als getal
+            const yearA = parseInt(a['Jaar']) || 0;
+            const yearB = parseInt(b['Jaar']) || 0;
+            return yearA - yearB;
+        });
         
         // Create rows (alle rijen voor volledig overzicht)
         for (let i = 0; i < sortedData.length; i++) {
@@ -2117,7 +2175,7 @@ class CSVAnalyzer {
             searchStats.textContent = `❌ Geen resultaten`;
             searchStats.style.color = '#e74c3c';
         } else if (visibleCount === totalCount) {
-            searchStats.textContent = `✅ Alle ${totalCount} klanten`;
+            searchStats.textContent = `Alle ${totalCount} klanten`;
             searchStats.style.color = '#27ae60';
         } else {
             searchStats.textContent = `🔍 ${visibleCount}/${totalCount} klanten`;

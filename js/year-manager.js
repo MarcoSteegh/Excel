@@ -43,14 +43,18 @@ class YearManager {
             const text = await parser.readFileAsText(file);
             const data = parser.parseCSV(text);
             
-            // Validate required columns
-            if (!data.headers.includes('Klantnummer') || !data.headers.includes('Jaar')) {
-                throw new Error('Jaar-bestand moet kolommen "Klantnummer" en "Jaar" bevatten');
+            // Zoek naar klantnummer-kolom
+            const klantnummerKolom = data.headers.includes('Klantnummer')
+                ? 'Klantnummer'
+                : (data.headers.includes('Cliëntnummer') ? 'Cliëntnummer' : null);
+            if (!klantnummerKolom) {
+                throw new Error('Jaar-bestand moet een kolom "Klantnummer" of "Cliëntnummer" bevatten');
             }
+            // Kolom "Jaar" is niet meer verplicht
 
             // Show column selection dialog
-            onColumnSelect(data.headers, (selectedColumns) => {
-                this.saveYearFile(year, file.name, data, selectedColumns);
+            onColumnSelect(data.headers, async (selectedColumns) => {
+                await this.saveYearFile(year, file.name, data, selectedColumns);
             });
 
         } catch (error) {
@@ -62,6 +66,10 @@ class YearManager {
      * Save year file data to storage
      */
     saveYearFile(year, filename, parsedData, selectedColumns) {
+        // Zoek naar klantnummer-kolom
+        const klantnummerKolom = parsedData.headers.includes('Klantnummer')
+            ? 'Klantnummer'
+            : (parsedData.headers.includes('Cliëntnummer') ? 'Cliëntnummer' : null);
         const yearData = {
             year: year,
             filename: filename,
@@ -69,25 +77,24 @@ class YearManager {
             selectedColumns: selectedColumns,
             data: parsedData.data.map(row => {
                 const filteredRow = {
-                    Klantnummer: row.Klantnummer,
-                    Jaar: row.Jaar
+                    Klantnummer: row[klantnummerKolom],
+                    Jaar: year // Vul jaar in vanuit upload
                 };
-                
-                // Only include selected columns
+                // Alleen geselecteerde kolommen toevoegen, behalve Klantnummer/Jaar
                 selectedColumns.forEach(col => {
-                    if (col !== 'Klantnummer' && col !== 'Jaar') {
+                    if (col !== 'Klantnummer' && col !== 'Cliëntnummer' && col !== 'Jaar') {
                         filteredRow[col] = row[col] || '';
                     }
                 });
-                
                 return filteredRow;
             })
         };
 
         this.yearFiles[year] = yearData;
         localStorage.setItem(this.storagePrefix + year, JSON.stringify(yearData));
-        
-        console.log(`Saved year file for ${year} with ${yearData.data.length} records`);
+        // Debug: toon eerste 3 klantnummers en jaar
+        const previewRows = yearData.data.slice(0, 3).map(r => `${r.Klantnummer} (${r.Jaar})`).join(', ');
+        console.log(`Saved year file for ${year} with ${yearData.data.length} records. Preview: ${previewRows}`);
     }
 
     /**
