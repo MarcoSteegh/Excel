@@ -101,23 +101,35 @@ class CSVAnalyzer {
             });
             // Maak een map van aangiftes op klantnummer+jaar
             function getKlantnummer(row) {
+                // Zoek in volgorde van voorkeur: Nummer, Klantnummer, Cliëntnummer
+                if (row['Nummer'] && row['Nummer'].trim()) return row['Nummer'].trim();
                 if (row['Klantnummer'] && row['Klantnummer'].trim()) return row['Klantnummer'].trim();
                 if (row['Cliëntnummer'] && row['Cliëntnummer'].trim()) return row['Cliëntnummer'].trim();
                 return '';
             }
             const aangifteMap = new Map();
             aangiftesData.data.forEach(row => {
-                const key = `${getKlantnummer(row)}_${row['Jaar']}`;
+                const klantnummer = getKlantnummer(row);
+                // Normaliseer Jaar als string
+                const jaar = row['Jaar'] !== undefined && row['Jaar'] !== null ? String(row['Jaar']).trim() : '';
+                const key = `${klantnummer}_${jaar}`;
                 aangifteMap.set(key, row);
             });
             // Combineer data: alle klanten uit jaar-bestanden, aangevuld met aangifte/tracking-data
             const mergedData = allRows.map(yearRow => {
-                let klantnummer = yearRow['Klantnummer'] && yearRow['Klantnummer'].trim()
-                    ? yearRow['Klantnummer'].trim()
-                    : (yearRow['Cliëntnummer'] && yearRow['Cliëntnummer'].trim() ? yearRow['Cliëntnummer'].trim() : '');
+                // Zoek klantnummer in volgorde van voorkeur: Nummer, Klantnummer, Cliëntnummer
+                let klantnummer = '';
+                if (yearRow['Nummer'] && yearRow['Nummer'].trim()) {
+                    klantnummer = yearRow['Nummer'].trim();
+                } else if (yearRow['Klantnummer'] && yearRow['Klantnummer'].trim()) {
+                    klantnummer = yearRow['Klantnummer'].trim();
+                } else if (yearRow['Cliëntnummer'] && yearRow['Cliëntnummer'].trim()) {
+                    klantnummer = yearRow['Cliëntnummer'].trim();
+                }
                 let mergedRow = { ...yearRow };
-                if (!mergedRow['Klantnummer'] && mergedRow['Cliëntnummer']) {
-                    mergedRow['Klantnummer'] = mergedRow['Cliëntnummer'];
+                // Vul altijd Klantnummer in voor consistentie
+                if (!mergedRow['Klantnummer'] && klantnummer) {
+                    mergedRow['Klantnummer'] = klantnummer;
                 }
                 // Normaliseer Jaar altijd als string
                 if (mergedRow['Jaar'] !== undefined && mergedRow['Jaar'] !== null) {
@@ -128,9 +140,17 @@ class CSVAnalyzer {
                 if (!klantnummer) {
                     console.warn(`[Merge] Geen klantnummer gevonden in jaar ${mergedRow['Jaar']}:`, yearRow);
                 }
-                return aangifteRow
-                    ? { ...mergedRow, ...aangifteRow, _hasAangifte: true }
-                    : { ...mergedRow, _hasAangifte: false };
+                if (aangifteRow) {
+                    // Zet tracking kolommen op 'Ja' als aangifte aanwezig is
+                    mergedRow = { ...mergedRow, ...aangifteRow, _hasAangifte: true };
+                    mergedRow['Inventarisatie OWR gemaakt'] = 'Ja';
+                    mergedRow['OWR zinvol'] = 'Ja';
+                    mergedRow['Gegevens compleet'] = 'Ja';
+                    mergedRow['Opgave OWR ingevuld'] = 'Ja';
+                    return mergedRow;
+                } else {
+                    return { ...mergedRow, _hasAangifte: false };
+                }
             });
             const uniqueJaren = [...new Set(mergedData.map(r => r['Jaar']))];
             console.log(`[Merge] Gecombineerde data:`, mergedData.map(r => r['Jaar']));
@@ -1432,32 +1452,28 @@ class CSVAnalyzer {
         
         // Create header
         const headerRow = document.createElement('tr');
+        // Indicator header
+        const indicatorTh = document.createElement('th');
+        indicatorTh.textContent = '';
+        indicatorTh.title = 'Uit aangiftes CSV';
+        headerRow.appendChild(indicatorTh);
         columns.forEach(column => {
             const th = document.createElement('th');
-            
-            // Voeg class toe voor specifieke kolommen
             if (column.toLowerCase().includes('tussenvoegsel')) {
                 th.classList.add('col-tussenvoegsel');
             }
             if (column === 'OWR zinvol') {
                 th.classList.add('col-owr-zinvol');
             }
-            
-            // Voor tracking kolommen, voeg professionele percentage badge toe
             if (this.isTrackingColumn(column) && this.baseData && this.baseData.data) {
                 const percentage = this.calculateTrackingPercentage(column);
                 const jaCount = this.baseData.data.filter(row => row[column] === 'Ja').length;
-                
-                // Maak professionele header met badge
                 th.innerHTML = this.createTrackingHeaderHTML(column, percentage, jaCount, this.baseData.data.length);
-                // Tooltip is nu al in de HTML vervat via createTrackingHeaderHTML
             } else {
-                // Gebruik verkorte naam voor weergave, maar behoud volledige naam in tooltip
                 const displayName = this.getDisplayColumnName(column);
                 th.textContent = displayName;
-                th.title = column; // Tooltip toont volledige naam
+                th.title = column;
             }
-            
             headerRow.appendChild(th);
         });
         thead.appendChild(headerRow);
@@ -1479,32 +1495,34 @@ class CSVAnalyzer {
         for (let i = 0; i < sortedData.length; i++) {
             const row = sortedData[i];
             const tr = document.createElement('tr');
-            
+            // Indicator kolom links
+            const indicatorTd = document.createElement('td');
+            indicatorTd.style.textAlign = 'center';
+            indicatorTd.style.width = '32px';
+            if (row._hasAangifte) {
+                indicatorTd.innerHTML = '<span title="Uit aangiftes CSV" style="color: #27ae60; font-size: 1.2em;">✔️</span>';
+            } else {
+                indicatorTd.innerHTML = '<span title="Geen aangifte" style="color: #bbb; font-size: 1.2em;">—</span>';
+            }
+            tr.appendChild(indicatorTd);
             columns.forEach(column => {
                 const td = document.createElement('td');
                 const value = row[column] || '';
-                
-                // Voeg class toe voor specifieke kolommen
                 if (column.toLowerCase().includes('tussenvoegsel')) {
                     td.classList.add('col-tussenvoegsel');
                 }
                 if (column === 'OWR zinvol') {
                     td.classList.add('col-owr-zinvol');
                 }
-                
-                // Check of dit een tracking kolom is
                 if (this.isTrackingColumn(column)) {
-                    // Maak dropdown voor tracking kolommen in preview
                     const dropdown = this.createTrackingDropdown(value, row, column);
                     td.appendChild(dropdown);
                 } else {
                     td.textContent = value;
-                    td.title = value; // Tooltip voor lange waardes
+                    td.title = value;
                 }
-                
                 tr.appendChild(td);
             });
-            
             tbody.appendChild(tr);
         }
     }
